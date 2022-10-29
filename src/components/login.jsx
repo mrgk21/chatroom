@@ -1,42 +1,56 @@
-import React, { Component, useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import socket from "../services/socketService";
+
 import Form from "./form";
+const { renderInput, renderButton } = new Form();
 
-class Login extends Form {
-	state = {
-		user: "",
-		pass: "",
-	};
+const Login = () => {
+	const [userInfo, setUserInfo] = useState({ data: {}, error: {} });
 
-	onSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log(this.state);
-		localStorage.setItem(this.state.user, this.state.pass); //encrypt this later with e2e encryption
-		<Link to={"chat"} />;
+		let inputObj = {};
+		for (const field of e.target) {
+			if (field.localName === "input") {
+				inputObj[field.name] = field.value;
+			}
+		}
+		try {
+			await socket.createInstance("auth").emit("login", inputObj, (val) => {
+				const { message, error } = val;
+				console.log(error);
+				setUserInfo({ data: inputObj, error });
+			});
+		} catch (error) {
+			console.log("error: ", error);
+		}
 	};
 
-	onChange = ({ target }) => {
-		this.setState({ [target.name]: target.value });
-	};
-
-	render() {
-		return (
+	return (
+		<React.Fragment>
+			{console.log(userInfo.error === undefined ? true : false)}
+			{userInfo.error === undefined ? <Navigate to={"/chat"} replace={true} /> : null}
 			<div className="container">
 				<div className="display-4">Login:</div>
-				<form onSubmit={this.onLogin}>
-					{this.renderInput("User ID", "text", "user", {
+				<span className="badge fs-5 text-bg-danger">
+					{userInfo.error !== undefined ? userInfo.error.general : ""}
+				</span>
+				<form onSubmit={(e) => handleSubmit(e)}>
+					{renderInput("User ID", "text", "user", userInfo.error, {
 						placeholder: "Enter userID",
 						className: "form-control",
 					})}
-					{this.renderInput("Password", "password", "pass", {
+					{renderInput("Password", "password", "pass", userInfo.error, {
 						placeholder: "Enter password",
 						className: "form-control",
 					})}
-					{this.renderButton("Login", "login", { className: "btn btn-outline-primary mt-1" })}
+					{renderButton("Login", "login", { className: "btn btn-outline-primary mt-1" })}
 				</form>
 			</div>
-		);
-	}
-}
+		</React.Fragment>
+	);
+};
 
 export default Login;

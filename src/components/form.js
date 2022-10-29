@@ -1,34 +1,20 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
 class Form extends React.Component {
-	state = {
-		user: "",
-		login: "",
-	};
-
-	onChange = ({ target }) => {
-		this.setState({ [target.name]: target.value });
-	};
-
-	validateInput = () => {
-		//validate data from server with this.state
-		this.onSubmit();
-	};
-
 	renderButton = (label, name, options) => {
 		return (
-			<button name={name} onSubmit={this.validateInput} {...options}>
+			<button name={name} {...options}>
 				{label}
 			</button>
 		);
 	};
 
-	renderInput = (label, type, name, options) => {
+	renderInput = (label, type, name, error = "", options) => {
 		return (
 			<React.Fragment>
 				<label htmlFor={name}>{label}</label>
-				<input type={type} name={name} {...options} onChange={this.onChange} />
+				<span className="badge ms-2 text-bg-danger">{error[name]}</span>
+				<input type={type} name={name} {...options} onChange={this.handleChange} />
 			</React.Fragment>
 		);
 	};
