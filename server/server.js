@@ -3,15 +3,11 @@ const { Server } = require("socket.io");
 const _ = require("lodash");
 const Joi = require("joi");
 
-// users = [
-// 	{user: 'abc', pass: '', socketID: '},
-// ]
-let users = [];
-
-// room: [
-// 	{name: 'abc', image: 'default', activeUsers: []}
-// ]
-let rooms = [];
+const mongoose = require("mongoose");
+const { UserModel } = require("./models/user");
+const { ChatroomModel } = require("./models/chatroom");
+const { MessageModel } = require("./models/message");
+const { CredentialModel } = require("./models/credentials");
 
 const authSchema = Joi.object().keys({
 	user: Joi.string().max(20).required(),
@@ -20,6 +16,10 @@ const authSchema = Joi.object().keys({
 
 const server = createServer().listen(3001, () => {
 	console.log("socket server running on port 3001...");
+	mongoose.connect("mongodb://localhost:27017/chat-app", (err) => {
+		if (err) console.log("connection failed");
+		console.log("mongodb server running on port 27017...");
+	});
 });
 
 const io = new Server(server, {
@@ -31,6 +31,7 @@ const io = new Server(server, {
 
 io.of("auth").on("connection", (socket) => {
 	socket.on("login", async (userDetails, func) => {
+		//check if field data are of correct format
 		let errObj = {};
 		try {
 			await authSchema.validateAsync(userDetails, { abortEarly: false });
@@ -44,14 +45,18 @@ io.of("auth").on("connection", (socket) => {
 				error: errObj,
 			});
 		}
-		const { user, pass } = userDetails;
-		const regUsers = users.map((details) => details.user);
 
-		if (users.find((cred) => _.isEqual({ user: cred.user, pass: cred.pass }, userDetails)) === undefined)
-			return func({ message: "Invalid username/password", error: { general: "Invalid credentials" } });
+		// check if fields match database
+		try {
+			const result = await CredentialModel.exists(userDetails).exec();
+			if (result === null)
+				return func({ message: "Invalid username/password", error: { general: "Invalid credentials" } });
 
-		console.log(`${userDetails.user} has joined.`);
-		return func({ message: "Logging in..." });
+			console.log(`${userDetails.user} has joined.`);
+			func({ message: "Logging in..." });
+		} catch (error) {
+			console.log(error);
+		}
 	});
 
 	socket.on("register", async (userDetails, func) => {
@@ -68,13 +73,17 @@ io.of("auth").on("connection", (socket) => {
 				error: errObj,
 			});
 		}
-		const { user, pass } = userDetails;
-		console.log(userDetails, users);
-		if (users.find((regUser) => regUser.user === userDetails.user) !== undefined)
-			return func({ message: "User already registered.", error: { general: "User already registered" } });
 
-		users.push({ user, pass, socketID: socket.id });
-		return func({ message: "User successfully registered." });
+		try {
+			const result = await CredentialModel.exists(userDetails).exec();
+			if (result !== null)
+				return func({ message: "User already registered.", error: { general: "User already registered" } });
+
+			await CredentialModel.create(userDetails);
+			return func({ message: "User successfully registered." });
+		} catch (error) {
+			console.log(error);
+		}
 	});
 });
 
