@@ -79,7 +79,12 @@ io.of("auth").on("connection", (socket) => {
 			if (result !== null)
 				return func({ message: "User already registered.", error: { general: "User already registered" } });
 
-			await CredentialModel.create(userDetails);
+			const userObj = await CredentialModel.create(userDetails);
+			const userProfile = {
+				user: userObj.user,
+				credentials: userObj._id,
+			};
+			await UserModel.create(userProfile);
 			return func({ message: "User successfully registered." });
 		} catch (error) {
 			console.log(error);
