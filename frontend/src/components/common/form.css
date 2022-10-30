@@ -1,0 +1,42 @@
+
+.form-button {
+    font-size: x-large;
+    margin: 1rem;
+    padding: 0.2rem;
+    border-radius: 5px;
+    border-color: royalblue;
+    background: none;
+}
+
+.form-button:hover {
+    background-color: royalblue;
+    color: white;
+    cursor: pointer;
+}
+
+.form-label {
+    margin: 0.5rem 0 0.1rem 0;
+    font-size: large;
+}
+
+.form-input {
+    line-height: 1.6;
+    font-size: large;
+    border-radius: 5px;
+    border-color: gray;
+    border-width: 1px;
+    padding: 0.2rem;
+}
+
+.form-warning {
+    font-size: small;
+    background-color: crimson;
+    border-radius: 3px;
+    border: none;
+    color: white;
+    font-weight: bold;
+    margin-left: 0.5rem;
+    margin-bottom: 0.6rem;
+    padding: 0.1rem 0.5rem 0.1rem 0.5rem;
+    height: inherit;
+}

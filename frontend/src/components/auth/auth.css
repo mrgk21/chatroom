@@ -1,0 +1,22 @@
+
+.auth-container {
+    font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', sans-serif;
+    font-weight: lighter;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+}
+
+.auth-container > .title {
+    font-size: 50px;
+}
+
+.auth-container > form{
+    display: flex;
+    flex-flow: column;
+    width: calc(30vw);
+}
+
+.auth-warning {
+    font-size: large !important
+}

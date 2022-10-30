@@ -1,12 +1,11 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
+import socket from "../../services/socketService";
 import { Navigate } from "react-router-dom";
-import socket from "../services/socketService";
 
-import Form from "./form";
-const { renderInput, renderButton } = new Form();
+import Form from "../common/form";
+const { renderButton, renderInput } = new Form();
 
-const Login = () => {
+const Register = () => {
 	const [userInfo, setUserInfo] = useState({ data: {}, error: {} });
 
 	const handleSubmit = async (e) => {
@@ -18,9 +17,8 @@ const Login = () => {
 			}
 		}
 		try {
-			await socket.createInstance("auth").emit("login", inputObj, (val) => {
+			await socket.createInstance("auth").emit("register", inputObj, (val) => {
 				const { message, error } = val;
-				console.log(error);
 				setUserInfo({ data: inputObj, error });
 			});
 		} catch (error) {
@@ -28,29 +26,30 @@ const Login = () => {
 		}
 	};
 
+	if (userInfo.error === undefined) return <Navigate to={"/login"} replace={true} />;
+
 	return (
 		<React.Fragment>
-			{console.log(userInfo.error === undefined ? true : false)}
-			{userInfo.error === undefined ? <Navigate to={"/chat"} replace={true} /> : null}
-			<div className="container">
-				<div className="display-4">Login:</div>
-				<span className="badge fs-5 text-bg-danger">
+			<div className="auth-container">
+				<div className="title">Register:</div>
+				<span
+					className="auth-warning form-warning"
+					style={{ visibility: !userInfo.error.hasOwnProperty("general") ? "collapse" : "visible" }}
+				>
 					{userInfo.error !== undefined ? userInfo.error.general : ""}
 				</span>
 				<form onSubmit={(e) => handleSubmit(e)}>
 					{renderInput("User ID", "text", "user", userInfo.error, {
 						placeholder: "Enter userID",
-						className: "form-control",
 					})}
 					{renderInput("Password", "password", "pass", userInfo.error, {
 						placeholder: "Enter password",
-						className: "form-control",
 					})}
-					{renderButton("Login", "login", { className: "btn btn-outline-primary mt-1" })}
+					{renderButton("Register", "register")}
 				</form>
 			</div>
 		</React.Fragment>
 	);
 };
 
-export default Login;
+export default Register;

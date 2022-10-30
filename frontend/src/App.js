@@ -1,11 +1,12 @@
 import React from "react";
-import "./App.css";
+// import "./App.css";
+import "./styles.css";
 import "bootstrap/dist/css/bootstrap.css";
-import MessageContainer from "./components/messageContainer";
-import NavBar from "./components/navbar";
-import InputBox from "./components/inputBox";
-import Login from "./components/login";
-import Register from "./components/register";
+import MessageContainer from "./components/chat/messageContainer";
+import NavBar from "./components/chat/navbar";
+import InputBox from "./components/chat/inputBox";
+import Login from "./components/auth/login";
+import Register from "./components/auth/register";
 import { Route, Routes } from "react-router-dom";
 
 const ChatContainer = ({ details, handleMessageSent }) => {
