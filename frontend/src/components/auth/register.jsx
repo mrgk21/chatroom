@@ -39,12 +39,24 @@ const Register = () => {
 					{userInfo.error !== undefined ? userInfo.error.general : ""}
 				</span>
 				<form onSubmit={(e) => handleSubmit(e)}>
-					{renderInput("User ID", "text", "user", userInfo.error, {
-						placeholder: "Enter userID",
-					})}
-					{renderInput("Password", "password", "pass", userInfo.error, {
-						placeholder: "Enter password",
-					})}
+					{renderInput(
+						"User ID",
+						"text",
+						"user",
+						{
+							placeholder: "Enter userID",
+						},
+						userInfo.error
+					)}
+					{renderInput(
+						"Password",
+						"password",
+						"pass",
+						{
+							placeholder: "Enter password",
+						},
+						userInfo.error
+					)}
 					{renderButton("Register", "register")}
 				</form>
 			</div>

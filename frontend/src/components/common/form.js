@@ -9,7 +9,7 @@ class Form extends React.Component {
 		);
 	};
 
-	renderInput = (label, type, name, error = {}, options) => {
+	renderInput = (label, type, name, options, error = {}) => {
 		return (
 			<React.Fragment>
 				<label className="form-label" htmlFor={name}>
