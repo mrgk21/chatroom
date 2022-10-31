@@ -12,15 +12,17 @@ class Form extends React.Component {
 	renderInput = (label, type, name, options, error = {}) => {
 		return (
 			<React.Fragment>
-				<label className="form-label" htmlFor={name}>
-					{label}
-					<span
-						className="form-warning"
-						style={{ visibility: !error.hasOwnProperty(name) ? "collapse" : "visible" }}
-					>
-						{error[name]}
-					</span>
-				</label>
+				{label !== "" ? (
+					<label className="form-label" htmlFor={name}>
+						{label}
+						<span
+							className="form-warning"
+							style={{ visibility: !error.hasOwnProperty(name) ? "collapse" : "visible" }}
+						>
+							{error[name]}
+						</span>
+					</label>
+				) : null}
 				<input className="form-input" type={type} name={name} {...options} onChange={this.handleChange} />
 			</React.Fragment>
 		);

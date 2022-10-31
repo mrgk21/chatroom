@@ -1,7 +1,8 @@
 
 .form-button {
-    font-size: large;
-    margin: 1rem;
+    font-size: medium;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     padding: 0.2rem;
     border-radius: 5px;
     border-color: royalblue;
@@ -16,12 +17,12 @@
 
 .form-label {
     margin: 0.5rem 0 0.1rem 0;
-    font-size: large;
+    font-size: medium;
 }
 
 .form-input {
     line-height: 1.6;
-    font-size: large;
+    font-size: medium;
     border-radius: 5px;
     border-color: gray;
     border-width: 1px;

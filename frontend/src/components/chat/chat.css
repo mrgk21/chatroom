@@ -1,0 +1,67 @@
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 25vw;
+    background-color: honeydew;
+    padding-left: 0.5rem;
+    padding-top: 0.5rem;
+    font-size: medium;
+}
+
+.search-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.search-container > .form-button {
+    margin: 0.5rem !important;
+    transform: translate(-1rem);
+}
+
+.search-container > .form-input {
+    margin: 0.5rem !important;
+    flex-grow: 1;
+}
+
+
+.group-tile {
+    display: grid;
+    border: 1px solid gray;
+    border-radius: 3px;
+    width: inherit;
+    grid-template-areas: 
+    "image header"
+    "image message";
+    grid-template-columns: 1fr 6fr;
+    grid-template-rows: 10fr 12fr;
+    align-items: center;
+}
+
+.group-tile > img {
+    grid-area: image;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 10rem;
+    background-color: palegoldenrod;
+    margin: 0.2rem;
+}
+
+.group-tile > strong {
+    font-family: Arial, Helvetica, sans-serif;
+    grid-area: header;
+    margin: 0 0.5rem 0 0.5rem;
+}
+
+.group-tile > strong > hr {
+    margin: 0;
+}
+
+.group-tile > p {
+    /* font-family: Verdana, Geneva, Tahoma, sans-serif; */
+    font-size: medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    grid-area: message;
+    margin: 0 0.5rem 0 0.5rem;
+}
