@@ -17,7 +17,7 @@ const Register = () => {
 			}
 		}
 		axios
-			.post("http://localhost:3001/auth/resgister", { auth: inputObj })
+			.post("http://localhost:3001/auth/register", { auth: inputObj })
 			.then(() => {
 				setUserInfo({ data: inputObj });
 			})

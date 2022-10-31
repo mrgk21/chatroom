@@ -1,3 +1,5 @@
+const express = require("express");
+const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const _ = require("lodash");
@@ -9,12 +11,11 @@ const { ChatroomModel } = require("./models/chatroom");
 const { MessageModel } = require("./models/message");
 const { CredentialModel } = require("./models/credentials");
 
-const authSchema = Joi.object().keys({
-	user: Joi.string().max(20).required(),
-	pass: Joi.string().max(20),
-});
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-const server = createServer().listen(3001, () => {
+const server = createServer(app).listen(3001, () => {
 	console.log("socket server running on port 3001...");
 	mongoose.connect("mongodb://localhost:27017/chat-app", (err) => {
 		if (err) console.log("connection failed");
@@ -29,67 +30,113 @@ const io = new Server(server, {
 	},
 });
 
-io.of("auth").on("connection", (socket) => {
-	socket.on("login", async (userDetails, func) => {
-		//check if field data are of correct format
-		let errObj = {};
-		try {
-			await authSchema.validateAsync(userDetails, { abortEarly: false });
-		} catch (error) {
-			for (const details of error.details) {
-				errObj[details.path[0]] = details.message;
-			}
+const authSchema = Joi.object().keys({
+	user: Joi.string().max(20).required(),
+	pass: Joi.string().max(20),
+});
 
-			return func({
-				message: "Validation error",
-				error: errObj,
-			});
+app.post("/auth/login", async (req, res) => {
+	const userDetails = req.body.auth;
+
+	let errObj = {};
+	try {
+		await authSchema.validateAsync(userDetails, { abortEarly: false });
+	} catch (error) {
+		for (const details of error.details) {
+			errObj[details.path[0]] = details.message;
 		}
 
-		// check if fields match database
-		try {
-			const result = await CredentialModel.exists(userDetails).exec();
-			if (result === null)
-				return func({ message: "Invalid username/password", error: { general: "Invalid credentials" } });
+		return res.status(400).send({
+			message: "Validation error",
+			error: errObj,
+		});
+	}
 
-			console.log(`${userDetails.user} has joined.`);
-			func({ message: "Logging in..." });
-		} catch (error) {
-			console.log(error);
+	// check if fields match database
+	try {
+		const result = await CredentialModel.exists(userDetails).exec();
+		if (result === null)
+			return res
+				.status(400)
+				.send({ message: "Invalid username/password", error: { general: "Invalid credentials" } });
+
+		console.log(`${userDetails.user} has joined.`);
+		res.status(200).send({ message: "Logging in...", _id: result._id });
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+app.post("/auth/register", async (req, res) => {
+	const userDetails = req.body.auth;
+
+	let errObj = {};
+	try {
+		await authSchema.validateAsync(userDetails, { abortEarly: false });
+	} catch (error) {
+		for (const details of error.details) {
+			errObj[details.path[0]] = details.message;
 		}
-	});
 
-	socket.on("register", async (userDetails, func) => {
-		let errObj = {};
-		try {
-			await authSchema.validateAsync(userDetails, { abortEarly: false });
-		} catch (error) {
-			for (const details of error.details) {
-				errObj[details.path[0]] = details.message;
-			}
+		return res.status(400).send({
+			message: "Validation error",
+			error: errObj,
+		});
+	}
 
-			return func({
-				message: "Validation error",
-				error: errObj,
-			});
+	try {
+		const result = await CredentialModel.exists(userDetails).exec();
+		if (result !== null)
+			return res
+				.status(400)
+				.send({ message: "User already registered.", error: { general: "User already registered" } });
+
+		const userObj = await CredentialModel.create(userDetails);
+		console.log(userObj);
+		const userProfile = {
+			name: userObj.user,
+			credentials: userObj._id,
+		};
+		await UserModel.create(userProfile);
+		return res.status(201).send({ message: "User successfully registered." });
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+app.get("/chat/:userId/group", async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ _id: userId }).exec();
+		if (chatroomIds === null) return res.send(400);
+		console.log(chatroomIds);
+		let names = [];
+		for (const roomId of chatroomIds) {
+			const { picture, name: groupName, _id: groupId } = await ChatroomModel.findOne({ _id: roomId }).exec();
+			const { content } = (
+				await MessageModel.aggregate()
+					.sort({ msg: { time: -1 } })
+					.limit(1)
+					.project({ content: "$msg.content" })
+			)[0];
+			const obj = { picture, groupName, groupId, message: { userName, content } };
+			names.push(obj);
 		}
+		console.log("sent names to", userName);
+		res.status(200).send(names);
+	} catch (error) {
+		console.log(error);
+		return res.status(500);
+	}
+});
 
-		try {
-			const result = await CredentialModel.exists(userDetails).exec();
-			if (result !== null)
-				return func({ message: "User already registered.", error: { general: "User already registered" } });
-
-			const userObj = await CredentialModel.create(userDetails);
-			const userProfile = {
-				user: userObj.user,
-				credentials: userObj._id,
-			};
-			await UserModel.create(userProfile);
-			return func({ message: "User successfully registered." });
-		} catch (error) {
-			console.log(error);
-		}
-	});
+app.get("/chat/:user/group/:groupId", async (req, res) => {
+	try {
+		const { user, groupId } = req.params;
+	} catch (error) {
+		console.log(error);
+		return res.status(500);
+	}
 });
 
 io.on("connection", (socket) => {

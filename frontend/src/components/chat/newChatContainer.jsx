@@ -11,20 +11,26 @@ const NewChatContainer = ({ user }) => {
 	const [selectedGroup, setSelectedGroup] = useState("");
 
 	useEffect(() => {
-		axios.get(`${process.env.REACT_APP_SERVER_URL}/user/group`).then((res) => {
+		const userId = sessionStorage.getItem("user");
+		axios.get(`http://localhost:3001/chat/${userId}/group`).then((res) => {
+			console.log(res);
 			if (res.status >= 200 && res.status < 300) {
+				const groupIds = JSON.stringify(res.data.map((x) => x.groupId));
+				sessionStorage.setItem("groupIds", groupIds);
 				setGroupDetails(res.data);
 			}
 		});
 	}, []);
 
 	useEffect(() => {
-		axios.get(`${process.env.REACT_APP_SERVER_URL}/user/${selectedGroup}`).then((res) => {
-			if (res.status >= 200 && res.status < 300) {
-				setMsgArr(res.data);
-			}
-		});
-	});
+		axios
+			.get(`${process.env.REACT_APP_SERVER_URL}/chat/635e722ddaf88cf4a351af1d/group/${selectedGroup}`)
+			.then((res) => {
+				if (res.status >= 200 && res.status < 300) {
+					setMsgArr(res.data);
+				}
+			});
+	}, []);
 
 	return (
 		<React.Fragment>
@@ -37,10 +43,13 @@ const NewChatContainer = ({ user }) => {
 						{renderButton("Search", "searchButton")}
 					</div>
 					<div className="group-list-container">
-						{/* {groupDetails.map((group) => (
-							<GroupTile groupPicture={group.picture} groupName={group.name} message={group.message} />
-						))} */}
-						<GroupTile />
+						{groupDetails.map((group) => (
+							<GroupTile
+								groupPicture={group.picture}
+								groupName={group.groupName}
+								message={group.message}
+							/>
+						))}
 					</div>
 				</div>
 			</div>
