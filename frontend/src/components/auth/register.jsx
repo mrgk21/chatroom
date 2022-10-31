@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import socket from "../../services/socketService";
+import axios from "axios";
 import { Navigate } from "react-router-dom";
 
 import Form from "../common/form";

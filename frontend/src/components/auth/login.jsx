@@ -1,8 +1,6 @@
+import React, { useState } from "react";
 import axios from "axios";
-import React from "react";
-import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import socket from "../../services/socketService";
 
 import Form from "../common/form";
 const { renderInput, renderButton } = new Form();
@@ -20,8 +18,10 @@ const Login = () => {
 		}
 		axios
 			.post("http://localhost:3001/auth/login", { auth: inputObj })
-			.then(() => {
+			.then((res) => {
 				setUserInfo({ data: inputObj });
+				console.log(res.data);
+				sessionStorage.setItem("user", res.data._id);
 			})
 			.catch((err) => {
 				const { status, data } = err.response;
