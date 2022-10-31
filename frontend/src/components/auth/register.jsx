@@ -16,14 +16,16 @@ const Register = () => {
 				inputObj[field.name] = field.value;
 			}
 		}
-		try {
-			await socket.createInstance("auth").emit("register", inputObj, (val) => {
-				const { message, error } = val;
-				setUserInfo({ data: inputObj, error });
+		axios
+			.post("http://localhost:3001/auth/resgister", { auth: inputObj })
+			.then(() => {
+				setUserInfo({ data: inputObj });
+			})
+			.catch((err) => {
+				const { status, data } = err.response;
+				if (status === 400) setUserInfo({ error: data.error });
+				console.log(err);
 			});
-		} catch (error) {
-			console.log("error: ", error);
-		}
 	};
 
 	if (userInfo.error === undefined) return <Navigate to={"/login"} replace={true} />;

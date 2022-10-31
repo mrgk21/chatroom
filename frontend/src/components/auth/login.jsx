@@ -1,3 +1,4 @@
+import axios from "axios";
 import React from "react";
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -17,15 +18,16 @@ const Login = () => {
 				inputObj[field.name] = field.value;
 			}
 		}
-		try {
-			await socket.createInstance("auth").emit("login", inputObj, (val) => {
-				const { message, error } = val;
-				console.log(error);
-				setUserInfo({ data: inputObj, error });
+		axios
+			.post("http://localhost:3001/auth/login", { auth: inputObj })
+			.then(() => {
+				setUserInfo({ data: inputObj });
+			})
+			.catch((err) => {
+				const { status, data } = err.response;
+				if (status === 400) setUserInfo({ error: data.error });
+				console.log(err);
 			});
-		} catch (error) {
-			console.log("error: ", error);
-		}
 	};
 
 	if (userInfo.error === undefined) return <Navigate to={"/chat"} replace={true} />;
