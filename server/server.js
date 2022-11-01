@@ -111,7 +111,7 @@ app.get("/chat/:userId/group", async (req, res) => {
 		const { userId } = req.params;
 		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ _id: userId }).exec();
 		if (chatroomIds === null) return res.send(400);
-		const { users } = await ChatroomModel.findOne({ users: userId });
+		const { users } = await ChatroomModel.findOne({ users: userId }).exec();
 		if (users === null) return res.send(400);
 
 		let names = [];
@@ -137,8 +137,8 @@ app.get("/chat/:userId/group", async (req, res) => {
 	}
 });
 
-//find a specific group of a user
-app.get("/chat/:user/group/:groupId", async (req, res) => {
+//get group details for a user
+app.get("/chat/:userId/group/:groupId", async (req, res) => {
 	try {
 		const { user, groupId } = req.params;
 	} catch (error) {
@@ -166,6 +166,32 @@ app.get("/chat/:userId/search/:searchString", async (req, res) => {
 		});
 		console.log(users);
 		res.status(200).send([...users, ...chatrooms]);
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+app.put("/chat/:userId/:id", async (req, res) => {
+	const { userId, id } = req.params;
+	try {
+		const user = await UserModel.findOne({ _id: userId }).exec();
+
+		if (user.friends.find((personId) => personId.toString() === id) !== undefined) return res.sendStatus(204);
+
+		if (user.chatrooms.find((roomId) => roomId.toString() === id) !== undefined) return res.sendStatus(204);
+		const friendId = await UserModel.exists({ _id: id });
+		if (friendId !== null) {
+			await UserModel.updateOne({ _id: userId }, { $push: { friends: friendId } });
+			return res.status(200).send({ message: "Added a friend!" });
+		}
+
+		const chatroomId = await ChatroomModel.exists({ _id: id });
+		if (chatroomId !== null) {
+			await UserModel.updateOne({ _id: userId }, { $push: { chatrooms: chatroomId } });
+			return res.status(200).send({ message: "Joined a group!" });
+		}
+
+		return res.status(404).send({ message: "Not found" });
 	} catch (error) {
 		console.log(error);
 	}

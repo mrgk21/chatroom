@@ -38,16 +38,23 @@ const NewChatContainer = ({ user }) => {
 	const handleSearch = (e) => {
 		const searchStr = e.target.value;
 		setSearchString(searchStr);
-		console.log(searchStr);
-		const userId = sessionStorage.getItem("user");
-		axios.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`).then((res) => {
-			setSearchDetails(res.data);
-			console.log(res);
-		});
+
+		if (searchStr) {
+			const userId = sessionStorage.getItem("user");
+			axios.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`).then((res) => {
+				setSearchDetails(res.data);
+				console.log(res);
+			});
+		}
 	};
 
-	const handleEntityAdd = (e) => {
+	const handleEntityAdd = (e, id) => {
 		e.preventDefault();
+
+		const userId = sessionStorage.getItem("user");
+		axios.put(`http://localhost:3001/chat/${userId}/${id}`).then((res) => {
+			console.log(res);
+		});
 	};
 
 	return (
@@ -60,31 +67,35 @@ const NewChatContainer = ({ user }) => {
 							onChange: handleSearch,
 						})}
 					</div>
-					<div className="search-list-container">
-						{searchDetails.map((detail) => (
-							<SearchTile
-								key={detail.hasOwnProperty("userId") ? detail.userId : detail.groupId}
-								isUser={detail.hasOwnProperty("userId")}
-								tileDetails={detail}
-								onEntityAdd={handleEntityAdd}
-							/>
-						))}
-					</div>
-					<div className="group-list-container">
-						{groupDetails.map((group) => {
-							const { groupId, picture, groupName, message } = group;
-							return (
-								<GroupTile
-									key={groupId}
-									groupId={groupId}
-									groupPicture={picture}
-									groupName={groupName}
-									message={message}
-									handleClick={(id) => setSelectedGroup(id)}
+					{searchString && (
+						<div className="search-list-container">
+							{searchDetails.map((detail) => (
+								<SearchTile
+									key={detail.hasOwnProperty("userId") ? detail.userId : detail.groupId}
+									isUser={detail.hasOwnProperty("userId")}
+									tileDetails={detail}
+									onEntityAdd={handleEntityAdd}
 								/>
-							);
-						})}
-					</div>
+							))}
+						</div>
+					)}
+					{!searchString && (
+						<div className="group-list-container">
+							{groupDetails.map((group) => {
+								const { groupId, picture, groupName, message } = group;
+								return (
+									<GroupTile
+										key={groupId}
+										groupId={groupId}
+										groupPicture={picture}
+										groupName={groupName}
+										message={message}
+										handleClick={(id) => setSelectedGroup(id)}
+									/>
+								);
+							})}
+						</div>
+					)}
 				</div>
 			</div>
 		</React.Fragment>
