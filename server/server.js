@@ -105,6 +105,7 @@ app.post("/auth/register", async (req, res) => {
 	}
 });
 
+//find all groups of a user
 app.get("/chat/:userId/group", async (req, res) => {
 	try {
 		const { userId } = req.params;
@@ -136,6 +137,7 @@ app.get("/chat/:userId/group", async (req, res) => {
 	}
 });
 
+//find a specific group of a user
 app.get("/chat/:user/group/:groupId", async (req, res) => {
 	try {
 		const { user, groupId } = req.params;
@@ -143,6 +145,23 @@ app.get("/chat/:user/group/:groupId", async (req, res) => {
 		console.log(error);
 		return res.status(500);
 	}
+});
+
+app.get("/chat/search/:searchString", async (req, res) => {
+	const searchRegEx = new RegExp(`^${req.params.searchString}`, "i");
+	try {
+		const users = (await UserModel.find({ name: { $regex: searchRegEx } }).limit(5)).map((user) => {
+			const userObj = { name: user.name, userName: user._id };
+			return userObj;
+		});
+
+		const chatrooms = (await ChatroomModel.find({ name: { $regex: searchRegEx } }).limit(5)).map((room) => {
+			const roomObj = { name: room.name, groupName: room._id };
+			return roomObj;
+		});
+		console.log(users);
+		res.status(200).send([...users, ...chatrooms]);
+	} catch (error) {}
 });
 
 io.on("connection", (socket) => {

@@ -29,6 +29,14 @@ const NewChatContainer = ({ user }) => {
 		});
 	}, [selectedGroup]);
 
+	const handleSearch = (e) => {
+		console.log("called");
+		// e.preventDefault();
+		const searchString = e.target.value;
+
+		axios.get(`http://localhost:3001/chat/search/${searchString}`).then((res) => console.log(res));
+	};
+
 	return (
 		<React.Fragment>
 			<div className="chat-container">
@@ -36,8 +44,8 @@ const NewChatContainer = ({ user }) => {
 					<div className="search-container">
 						{renderInput("", "text", "searchInput", {
 							placeholder: "Search for people or groups",
+							onChange: handleSearch,
 						})}
-						{renderButton("Search", "searchButton")}
 					</div>
 					<div className="group-list-container">
 						{groupDetails.map((group) => {

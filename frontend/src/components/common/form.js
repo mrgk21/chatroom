@@ -23,7 +23,7 @@ class Form extends React.Component {
 						</span>
 					</label>
 				) : null}
-				<input className="form-input" type={type} name={name} {...options} onChange={this.handleChange} />
+				<input className="form-input" type={type} name={name} {...options} />
 			</React.Fragment>
 		);
 	};
