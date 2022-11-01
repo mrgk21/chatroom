@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Form from "../common/form";
 import GroupTile from "./groupTile";
+import SearchTile from "./searchTile";
 
+import Form from "../common/form";
 const { renderInput, renderButton } = new Form();
 
 const NewChatContainer = ({ user }) => {
-	const [msgArr, setMsgArr] = useState([]);
+	//sidebar states
 	const [groupDetails, setGroupDetails] = useState([]);
 	const [selectedGroup, setSelectedGroup] = useState("");
+	const [searchDetails, setSearchDetails] = useState([]);
+	const [searchString, setSearchString] = useState("");
+
+	//chatbox states
+	const [msgArr, setMsgArr] = useState([]);
 
 	useEffect(() => {
 		const userId = sessionStorage.getItem("user");
@@ -30,11 +36,18 @@ const NewChatContainer = ({ user }) => {
 	}, [selectedGroup]);
 
 	const handleSearch = (e) => {
-		console.log("called");
-		// e.preventDefault();
-		const searchString = e.target.value;
+		const searchStr = e.target.value;
+		setSearchString(searchStr);
+		console.log(searchStr);
+		const userId = sessionStorage.getItem("user");
+		axios.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`).then((res) => {
+			setSearchDetails(res.data);
+			console.log(res);
+		});
+	};
 
-		axios.get(`http://localhost:3001/chat/search/${searchString}`).then((res) => console.log(res));
+	const handleEntityAdd = (e) => {
+		e.preventDefault();
 	};
 
 	return (
@@ -46,6 +59,16 @@ const NewChatContainer = ({ user }) => {
 							placeholder: "Search for people or groups",
 							onChange: handleSearch,
 						})}
+					</div>
+					<div className="search-list-container">
+						{searchDetails.map((detail) => (
+							<SearchTile
+								key={detail.hasOwnProperty("userId") ? detail.userId : detail.groupId}
+								isUser={detail.hasOwnProperty("userId")}
+								tileDetails={detail}
+								onEntityAdd={handleEntityAdd}
+							/>
+						))}
 					</div>
 					<div className="group-list-container">
 						{groupDetails.map((group) => {

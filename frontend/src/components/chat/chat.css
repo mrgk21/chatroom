@@ -23,6 +23,27 @@
     flex-grow: 1;
 }
 
+.search-tile {
+    cursor: pointer;
+    display: flex;
+    border: 1px solid gray;
+    border-radius: 3px;
+    width: inherit;
+    align-items: center;
+    padding: 0.5rem;
+    margin: 0.1rem 0 0.1rem 0;
+    height: 2.5rem;
+}
+
+.search-tile > button {
+    margin: 0 0.1rem 0 auto ;
+    /* margin-left: auto;
+    margin-right: 0.1rem; */
+    border-radius: 3px;
+    border: 1px solid royalblue;
+    width: 2rem;
+    font-size: large;
+}
 
 .group-tile {
     cursor: pointer;
@@ -36,6 +57,7 @@
     grid-template-columns: 1fr 6fr;
     grid-template-rows: 10fr 12fr;
     align-items: center;
+    margin: 0.1rem 0 0.1rem 0;
 }
 
 .group-tile > img {
