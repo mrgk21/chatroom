@@ -1,10 +1,9 @@
-import React, { Component } from "react";
+import React from "react";
 
-const GroupTile = ({ groupPicture = "https://picsum.photos/200", groupName = "test group", message }) => {
-	console.log(message);
+const GroupTile = ({ groupPicture, groupName, message, groupId, handleClick }) => {
 	return (
 		<React.Fragment>
-			<div className="group-tile">
+			<div className="group-tile" onClick={() => handleClick(groupId)}>
 				<img src={groupPicture} alt="Group image" />
 				<strong>
 					{groupName}

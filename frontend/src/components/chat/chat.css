@@ -25,6 +25,7 @@
 
 
 .group-tile {
+    cursor: pointer;
     display: grid;
     border: 1px solid gray;
     border-radius: 3px;

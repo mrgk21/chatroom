@@ -107,9 +107,9 @@ app.post("/auth/register", async (req, res) => {
 app.get("/chat/:userId/group", async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ _id: userId }).exec();
+		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ credentials: userId }).exec();
 		if (chatroomIds === null) return res.send(400);
-		console.log(chatroomIds);
+
 		let names = [];
 		for (const roomId of chatroomIds) {
 			const { picture, name: groupName, _id: groupId } = await ChatroomModel.findOne({ _id: roomId }).exec();
