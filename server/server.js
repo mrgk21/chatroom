@@ -61,7 +61,8 @@ app.post("/auth/login", async (req, res) => {
 				.send({ message: "Invalid username/password", error: { general: "Invalid credentials" } });
 
 		console.log(`${userDetails.user} has joined.`);
-		res.status(200).send({ message: "Logging in...", _id: result._id });
+		const { _id: userId } = await UserModel.findOne({ credentials: result._id }).exec();
+		res.status(200).send({ message: "Logging in...", _id: userId });
 	} catch (error) {
 		console.log(error);
 	}
@@ -107,19 +108,22 @@ app.post("/auth/register", async (req, res) => {
 app.get("/chat/:userId/group", async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ credentials: userId }).exec();
+		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ _id: userId }).exec();
 		if (chatroomIds === null) return res.send(400);
 
 		let names = [];
 		for (const roomId of chatroomIds) {
-			const { picture, name: groupName, _id: groupId } = await ChatroomModel.findOne({ _id: roomId }).exec();
+			console.log(roomId);
+			const {
+				picture,
+				name: groupName,
+				_id: groupId,
+			} = await ChatroomModel.findOne({ _id: roomId, users: userId }).exec();
 			const { content } = (
-				await MessageModel.aggregate()
-					.sort({ msg: { time: -1 } })
-					.limit(1)
-					.project({ content: "$msg.content" })
+				await MessageModel.aggregate().sort({ "msg.time": -1 }).limit(1).project({ content: "$msg.content" })
 			)[0];
 			const obj = { picture, groupName, groupId, message: { userName, content } };
+			console.log(obj);
 			names.push(obj);
 		}
 		console.log("sent names to", userName);
@@ -133,6 +137,7 @@ app.get("/chat/:userId/group", async (req, res) => {
 app.get("/chat/:user/group/:groupId", async (req, res) => {
 	try {
 		const { user, groupId } = req.params;
+		// const {user: userName}
 	} catch (error) {
 		console.log(error);
 		return res.status(500);

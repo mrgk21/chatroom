@@ -14,14 +14,13 @@ const NewChatContainer = ({ user }) => {
 		const userId = sessionStorage.getItem("user");
 		axios.get(`http://localhost:3001/chat/${userId}/group`).then((res) => {
 			if (res.status >= 200 && res.status < 300) {
-				// const groupIds = JSON.stringify(res.data.map((x) => x.groupId));
-				// sessionStorage.setItem("groupIds", groupIds);
 				setGroupDetails(res.data);
 			}
 		});
 	}, []);
 
 	useEffect(() => {
+		console.log("axios 2 called");
 		const userId = sessionStorage.getItem("user");
 		axios.get(`http://localhost:3001/chat/${userId}/group/${selectedGroup}`).then((res) => {
 			if (res.status >= 200 && res.status < 300) {
@@ -29,10 +28,6 @@ const NewChatContainer = ({ user }) => {
 			}
 		});
 	}, [selectedGroup]);
-
-	const handleClick = (id) => {
-		setSelectedGroup(id);
-	};
 
 	return (
 		<React.Fragment>
@@ -54,7 +49,7 @@ const NewChatContainer = ({ user }) => {
 									groupPicture={picture}
 									groupName={groupName}
 									message={message}
-									handleClick={handleClick}
+									handleClick={(id) => setSelectedGroup(id)}
 								/>
 							);
 						})}
