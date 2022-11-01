@@ -147,13 +147,14 @@ app.get("/chat/:user/group/:groupId", async (req, res) => {
 	}
 });
 
-app.get("/chat/:user/search/:searchString", async (req, res) => {
+app.get("/chat/:userId/search/:searchString", async (req, res) => {
 	const { userId, searchString } = req.params;
 	const searchRegEx = new RegExp(`^${searchString}`, "i");
 	const userIdRegEx = new RegExp(`^(?!${userId})`);
+	console.log(searchRegEx, userIdRegEx);
 	try {
 		const users = (
-			await UserModel.find({ name: { $regex: searchRegEx }, _id: { $regex: userIdRegEx } }).limit(5)
+			await UserModel.find({ name: { $regex: searchRegEx }, _id: { $not: { $eq: userId } } }).limit(5)
 		).map((user) => {
 			const userObj = { name: user.name, userId: user._id };
 			return userObj;
@@ -165,7 +166,9 @@ app.get("/chat/:user/search/:searchString", async (req, res) => {
 		});
 		console.log(users);
 		res.status(200).send([...users, ...chatrooms]);
-	} catch (error) {}
+	} catch (error) {
+		console.log(error);
+	}
 });
 
 io.on("connection", (socket) => {
