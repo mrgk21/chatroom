@@ -110,6 +110,8 @@ app.get("/chat/:userId/group", async (req, res) => {
 		const { userId } = req.params;
 		const { name: userName, chatrooms: chatroomIds } = await UserModel.findOne({ _id: userId }).exec();
 		if (chatroomIds === null) return res.send(400);
+		const { users } = await ChatroomModel.findOne({ users: userId });
+		if (users === null) return res.send(400);
 
 		let names = [];
 		for (const roomId of chatroomIds) {
@@ -137,7 +139,6 @@ app.get("/chat/:userId/group", async (req, res) => {
 app.get("/chat/:user/group/:groupId", async (req, res) => {
 	try {
 		const { user, groupId } = req.params;
-		// const {user: userName}
 	} catch (error) {
 		console.log(error);
 		return res.status(500);
