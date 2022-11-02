@@ -19,26 +19,28 @@ const NewChatContainer = ({ user }) => {
 
 	useEffect(() => {
 		const userId = sessionStorage.getItem("user");
-		axios.get(`http://localhost:3001/chat/${userId}/group`).then((res) => {
-			if (res.status >= 200 && res.status < 300) {
-				setGroupDetails(res.data);
-				setUserID(userId);
-			}
-		});
+		axios
+			.get(`http://localhost:3001/chat/${userId}/group`)
+			.then((res) => {
+				if (res.status >= 200 && res.status < 300) {
+					setGroupDetails(res.data);
+					setUserID(userId);
+				}
+			})
+			.catch((err) => console.log(err));
 	}, []);
 
 	useEffect(() => {
-		console.log("axios 2 called");
-		axios.get(`http://localhost:3001/chat/${userId}/group/${selectedGroup}`).then((res) => {
-			if (res.status >= 200 && res.status < 300) {
-				setMsgArr(res.data);
-			}
-		});
+		if (selectedGroup.hasOwnProperty("groupId")) {
+			axios
+				.get(`http://localhost:3001/chat/${userId}/group/${selectedGroup.groupId}`)
+				.then((res) => setMsgArr(res.data))
+				.catch((err) => console.log(err));
+		}
 	}, [selectedGroup]);
 
 	const handleSelectedGroup = (id) => {
 		const group = groupDetails.find((detail) => detail.groupId === id);
-		console.log(group);
 		setSelectedGroup(group);
 	};
 
@@ -47,10 +49,13 @@ const NewChatContainer = ({ user }) => {
 		setSearchString(searchStr);
 
 		if (searchStr) {
-			axios.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`).then((res) => {
-				setSearchDetails(res.data);
-				console.log(res);
-			});
+			axios
+				.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`)
+				.then((res) => {
+					setSearchDetails(res.data);
+					console.log(res);
+				})
+				.catch((err) => console.log(err));
 		}
 	};
 
@@ -64,6 +69,7 @@ const NewChatContainer = ({ user }) => {
 
 	const handleMessageSent = (e) => {
 		e.preventDefault();
+		const input = e.target["messageInput"].value;
 	};
 
 	return (
@@ -113,10 +119,12 @@ const NewChatContainer = ({ user }) => {
 					</div>
 					<div className="chatbox">
 						<div className="message-display">
-							<p className="msg msg-self">Hello1</p>
-							<p className="msg msg-self">Hello2</p>
-							<p className="msg ">Hello3</p>
-							<p className="msg msg-self">Hello4</p>
+							{msgArr.map((msg) => (
+								<p
+									key={msg._id}
+									className={`msg ${msg.sender === selectedGroup.message.userName ? "msg-self" : ""}`}
+								>{`${msg.sender}: ${msg.content}`}</p>
+							))}
 						</div>
 						<form onSubmit={(e) => handleMessageSent(e)} className="send-message">
 							{renderInput("", "text", "messageInput", {

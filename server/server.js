@@ -140,13 +140,34 @@ app.get("/chat/:userId/group", async (req, res) => {
 //get group details for a user
 app.get("/chat/:userId/group/:groupId", async (req, res) => {
 	try {
-		const { user, groupId } = req.params;
+		const { userId, groupId } = req.params;
+		const user = await UserModel.findOne({ chatrooms: groupId }).exec();
+		if (user === null) return res.sendStatus(400);
+
+		const room = await ChatroomModel.findOne({ users: userId }).exec();
+		if (room === null) return res.sendStatus(400);
+
+		const messages = await MessageModel.aggregate()
+			.sort({ "msg.time": -1 })
+			.limit(50)
+			.project({ sender: "$sender", content: "$msg.content" });
+
+		// console.log(messages[0]);
+		for (const msgIndex in messages) {
+			const { name } = await UserModel.findOne({ _id: messages[msgIndex].sender }).exec();
+			// console.log(msgIndex, obj);
+			messages[msgIndex].sender = name;
+		}
+
+		console.log(messages);
+		return res.status(200).send(messages);
 	} catch (error) {
 		console.log(error);
 		return res.status(500);
 	}
 });
 
+//search for people or groups
 app.get("/chat/:userId/search/:searchString", async (req, res) => {
 	const { userId, searchString } = req.params;
 	const searchRegEx = new RegExp(`^${searchString}`, "i");
@@ -171,6 +192,7 @@ app.get("/chat/:userId/search/:searchString", async (req, res) => {
 	}
 });
 
+//add friends or join groups
 app.put("/chat/:userId/:id", async (req, res) => {
 	const { userId, id } = req.params;
 	try {
