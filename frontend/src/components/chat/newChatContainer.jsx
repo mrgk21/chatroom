@@ -9,7 +9,8 @@ const { renderInput, renderButton } = new Form();
 const NewChatContainer = ({ user }) => {
 	//sidebar states
 	const [groupDetails, setGroupDetails] = useState([]);
-	const [selectedGroup, setSelectedGroup] = useState("");
+	const [selectedGroup, setSelectedGroup] = useState({});
+	const [userId, setUserID] = useState("");
 	const [searchDetails, setSearchDetails] = useState([]);
 	const [searchString, setSearchString] = useState("");
 
@@ -21,13 +22,13 @@ const NewChatContainer = ({ user }) => {
 		axios.get(`http://localhost:3001/chat/${userId}/group`).then((res) => {
 			if (res.status >= 200 && res.status < 300) {
 				setGroupDetails(res.data);
+				setUserID(userId);
 			}
 		});
 	}, []);
 
 	useEffect(() => {
 		console.log("axios 2 called");
-		const userId = sessionStorage.getItem("user");
 		axios.get(`http://localhost:3001/chat/${userId}/group/${selectedGroup}`).then((res) => {
 			if (res.status >= 200 && res.status < 300) {
 				setMsgArr(res.data);
@@ -35,12 +36,17 @@ const NewChatContainer = ({ user }) => {
 		});
 	}, [selectedGroup]);
 
+	const handleSelectedGroup = (id) => {
+		const group = groupDetails.find((detail) => detail.groupId === id);
+		console.log(group);
+		setSelectedGroup(group);
+	};
+
 	const handleSearch = (e) => {
 		const searchStr = e.target.value;
 		setSearchString(searchStr);
 
 		if (searchStr) {
-			const userId = sessionStorage.getItem("user");
 			axios.get(`http://localhost:3001/chat/${userId}/search/${searchStr}`).then((res) => {
 				setSearchDetails(res.data);
 				console.log(res);
@@ -51,10 +57,13 @@ const NewChatContainer = ({ user }) => {
 	const handleEntityAdd = (e, id) => {
 		e.preventDefault();
 
-		const userId = sessionStorage.getItem("user");
 		axios.put(`http://localhost:3001/chat/${userId}/${id}`).then((res) => {
 			console.log(res);
 		});
+	};
+
+	const handleMessageSent = (e) => {
+		e.preventDefault();
 	};
 
 	return (
@@ -90,12 +99,32 @@ const NewChatContainer = ({ user }) => {
 										groupPicture={picture}
 										groupName={groupName}
 										message={message}
-										handleClick={(id) => setSelectedGroup(id)}
+										handleClick={handleSelectedGroup}
 									/>
 								);
 							})}
 						</div>
 					)}
+				</div>
+				<div className="group-container">
+					<div className="navbar">
+						<img src={selectedGroup.picture} alt="group image" />
+						<strong>{selectedGroup.groupName}</strong>
+					</div>
+					<div className="chatbox">
+						<div className="message-display">
+							<p className="msg msg-self">Hello1</p>
+							<p className="msg msg-self">Hello2</p>
+							<p className="msg ">Hello3</p>
+							<p className="msg msg-self">Hello4</p>
+						</div>
+						<form onSubmit={(e) => handleMessageSent(e)} className="send-message">
+							{renderInput("", "text", "messageInput", {
+								placeholder: "Type a message...",
+							})}
+							{renderButton("Send", "send")}
+						</form>
+					</div>
 				</div>
 			</div>
 		</React.Fragment>

@@ -1,7 +1,7 @@
 import React from "react";
 // import "./App.css";
 import "./styles.css";
-import "bootstrap/dist/css/bootstrap.css";
+// import "bootstrap/dist/css/bootstrap.css";
 import ChatContainer from "./components/chat/chatContainer";
 import Login from "./components/auth/login";
 import Register from "./components/auth/register";
