@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
-const { Server } = require("socket.io");
+// const { Server } = require("socket.io");
+// const socketServer = require("./socket-server");
 const _ = require("lodash");
 const Joi = require("joi");
 
@@ -23,18 +24,22 @@ const server = createServer(app).listen(3001, () => {
 	});
 });
 
-const io = new Server(server, {
-	cors: {
-		origin: "http://localhost:3000",
-		methods: ["GET", "POST"],
-	},
-});
+// const io = new Server(server, {
+// 	cors: {
+// 		origin: "http://localhost:3000",
+// 		methods: ["GET", "POST"],
+// 	},
+// });
+
+// socketServer.createSocketServer(socket);
+// socketServer.useNamespace("/chat");
 
 const authSchema = Joi.object().keys({
 	user: Joi.string().max(20).required(),
 	pass: Joi.string().max(20),
 });
 
+//authorize login
 app.post("/auth/login", async (req, res) => {
 	const userDetails = req.body.auth;
 
@@ -68,6 +73,7 @@ app.post("/auth/login", async (req, res) => {
 	}
 });
 
+//handle new user registration
 app.post("/auth/register", async (req, res) => {
 	const userDetails = req.body.auth;
 
@@ -116,18 +122,17 @@ app.get("/chat/:userId/group", async (req, res) => {
 
 		let names = [];
 		for (const roomId of chatroomIds) {
-			console.log(roomId);
 			const {
 				picture,
 				name: groupName,
 				_id: groupId,
 			} = await ChatroomModel.findOne({ _id: roomId, users: userId }).exec();
+
 			const { content } = (
 				await MessageModel.aggregate().sort({ "msg.time": -1 }).limit(1).project({ content: "$msg.content" })
 			)[0];
-			const obj = { picture, groupName, groupId, message: { userName, content } };
-			console.log(obj);
-			names.push(obj);
+
+			names.push({ picture, groupName, groupId, message: { userName, content } });
 		}
 		console.log("sent names to", userName);
 		res.status(200).send(names);
@@ -137,10 +142,20 @@ app.get("/chat/:userId/group", async (req, res) => {
 	}
 });
 
-//get group details for a user
+//get messages of a group
 app.get("/chat/:userId/group/:groupId", async (req, res) => {
 	try {
 		const { userId, groupId } = req.params;
+		const { recentMsgId } = req.query;
+
+		if (recentMsgId !== undefined) {
+			const message = await MessageModel.findOne({ _id: recentMsgId }).exec();
+			if (message === null) return res.sendStatus(204);
+
+			const { _id, sender, msg } = message;
+			return res.status(200).send({ _id, sender, content: msg.content });
+		}
+
 		const user = await UserModel.findOne({ chatrooms: groupId }).exec();
 		if (user === null) return res.sendStatus(400);
 
@@ -150,20 +165,41 @@ app.get("/chat/:userId/group/:groupId", async (req, res) => {
 		const messages = await MessageModel.aggregate()
 			.sort({ "msg.time": -1 })
 			.limit(50)
-			.project({ sender: "$sender", content: "$msg.content" });
+			.project({ _id: "$_id", sender: "$sender", content: "$msg.content" });
 
-		// console.log(messages[0]);
 		for (const msgIndex in messages) {
 			const { name } = await UserModel.findOne({ _id: messages[msgIndex].sender }).exec();
-			// console.log(msgIndex, obj);
 			messages[msgIndex].sender = name;
 		}
 
-		console.log(messages);
 		return res.status(200).send(messages);
 	} catch (error) {
 		console.log(error);
 		return res.status(500);
+	}
+});
+
+//post the most recent message onto the group
+app.post("/chat/:userId/group/:groupId", async (req, res) => {
+	console.log("inside get messages");
+	try {
+		const { userId, groupId } = req.params;
+		const { content } = req.body;
+		const user = await UserModel.findOne({ chatrooms: groupId }).exec();
+		if (user === null) return res.sendStatus(400);
+
+		const room = await ChatroomModel.findOne({ users: userId }).exec();
+		if (room === null) return res.sendStatus(400);
+
+		const newMessage = {
+			chatroom: groupId,
+			sender: userId,
+			msg: { content },
+		};
+		await MessageModel.create(newMessage);
+		return res.sendStatus(200);
+	} catch (error) {
+		console.log(error);
 	}
 });
 
@@ -204,6 +240,7 @@ app.put("/chat/:userId/:id", async (req, res) => {
 		const friendId = await UserModel.exists({ _id: id });
 		if (friendId !== null) {
 			await UserModel.updateOne({ _id: userId }, { $push: { friends: friendId } });
+
 			return res.status(200).send({ message: "Added a friend!" });
 		}
 
@@ -219,59 +256,49 @@ app.put("/chat/:userId/:id", async (req, res) => {
 	}
 });
 
-io.on("connection", (socket) => {
-	console.log(socket.id);
+// chatNsp.on("connection", async (socket) => {
+// 	socket.on("msg", (item) => {
+// 		const newMessage = {
+// 			chatroom: item.groupId,
+// 			sender: item.sender,
+// 			msg: {
+// 				content: item.content,
+// 			},
+// 		};
 
-	socket.on("disconnect", (reason) => console.log(reason));
-
-	socket.on("client-register", (userDetails, func) => {
-		const { user, pass } = userDetails;
-		if (user === "") return func({ loginAccess: false, message: "Username cannot be empty" });
-
-		const regUsers = users.map((details) => details.user);
-		if (regUsers.find((regUser) => regUser === user))
-			return func({ loginAccess: false, message: "User already registered." });
-
-		func({ loginAccess: true, message: "User successfully registered." });
-		users.push({ user, pass, socketID: socket.socketID, loggedIn: true });
-		console.log(`${userDetails.user} has joined.`);
-	});
-
-	socket.on("client-login", (userDetails, func) => {
-		console.log(socket.id);
-		if (
-			users.find((userProfile) => {
-				const { user, pass } = userProfile;
-				return _.isEqual({ user, pass }, userDetails);
-			})
-		) {
-			func({ loginAccess: true, message: "User found, logging in..." });
-		} else {
-			func({ loginAccess: false, message: "No user found" });
-		}
-	});
-});
-
-// app.get("/search-room", (req, res) => {
-// 	if (!req.message) return res.status(400).json({ name: room.name, message: "Invalid request" });
-// 	const room = rooms.find((room) => room.name === req.message.name);
-// 	if (typeof room === "undefined") {
-// 		return res.status(404).json({ name: room.name, message: "Room not found." });
-// 	} else {
-// 		room.activeUsers.push(req.message.user);
-// 		return res.status(200).json({ name: room.name, message: "Room found. Joining..." });
-// 	}
+// 		MessageModel.create(newMessage, (err) => console.log(err));
+// 	});
 // });
 
-// app.post("/create-room/:roomName", (req, res) => {
-// 	const { roomName } = req.params;
-// 	if (!roomName) return res.status(400).json({ name: roomName, message: "Invalid request" });
-// 	if (typeof rooms.find((room) => room.name === roomName) === "undefined") {
-// 		rooms.push({ name: roomName, image: "default", users: [] });
-// 		res.status(201).json({ name: roomName, message: "Room created." });
-// 	} else res.status(400).json({ name: null, message: "Room already exists." });
-// 	console.log(rooms);
-// });
+// io.on("connection", (socket) => {
+// 	console.log(socket.id);
 
-//track users using session ID npm package: express-session
-//read up on cookies
+// 	socket.on("disconnect", (reason) => console.log(reason));
+
+// 	socket.on("client-register", (userDetails, func) => {
+// 		const { user, pass } = userDetails;
+// 		if (user === "") return func({ loginAccess: false, message: "Username cannot be empty" });
+
+// 		const regUsers = users.map((details) => details.user);
+// 		if (regUsers.find((regUser) => regUser === user))
+// 			return func({ loginAccess: false, message: "User already registered." });
+
+// 		func({ loginAccess: true, message: "User successfully registered." });
+// 		users.push({ user, pass, socketID: socket.socketID, loggedIn: true });
+// 		console.log(`${userDetails.user} has joined.`);
+// 	});
+
+// 	socket.on("client-login", (userDetails, func) => {
+// 		console.log(socket.id);
+// 		if (
+// 			users.find((userProfile) => {
+// 				const { user, pass } = userProfile;
+// 				return _.isEqual({ user, pass }, userDetails);
+// 			})
+// 		) {
+// 			func({ loginAccess: true, message: "User found, logging in..." });
+// 		} else {
+// 			func({ loginAccess: false, message: "No user found" });
+// 		}
+// 	});
+// });

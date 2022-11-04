@@ -6,6 +6,8 @@ import SearchTile from "./searchTile";
 import Form from "../common/form";
 const { renderInput, renderButton } = new Form();
 
+let pollingInterval;
+
 const NewChatContainer = ({ user }) => {
 	//sidebar states
 	const [groupDetails, setGroupDetails] = useState([]);
@@ -16,6 +18,33 @@ const NewChatContainer = ({ user }) => {
 
 	//chatbox states
 	const [msgArr, setMsgArr] = useState([]);
+
+	const msgHandler = (item) => {
+		console.log("inside msg handler");
+		const tempMsgArr = [...msgArr];
+		tempMsgArr.pop();
+		tempMsgArr.unshift({ content: item.content, sender: item.sender });
+		setMsgArr(tempMsgArr);
+		poll(msgArr);
+	};
+
+	const handleMessageSent = (e) => {
+		e.preventDefault();
+		const content = e.target["messageInput"].value;
+		console.log("inside handle msg sent");
+		const {
+			message: { userName: sender },
+			groupId,
+		} = selectedGroup;
+		axios
+			.post(`http://localhost:3001/chat/${userId}/group/${groupId}`, { content })
+			.then((res) => {
+				if (res.status === 200) msgHandler({ content, sender });
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	};
 
 	useEffect(() => {
 		const userId = sessionStorage.getItem("user");
@@ -30,11 +59,36 @@ const NewChatContainer = ({ user }) => {
 			.catch((err) => console.log(err));
 	}, []);
 
+	const pollHandler = (arr) => {
+		const {
+			message: { userName: sender },
+			groupId,
+		} = selectedGroup;
+		console.log("polling");
+		console.log(arr);
+		axios
+			.get(`http://localhost:3001/chat/${userId}/group/${groupId}?recentMsgId=${arr[0]._id}`)
+			.then((res) => {
+				if (res.status === 204) return;
+				if (res.status === 200) return msgHandler({ content: res.data.content, sender });
+			})
+			.catch((err) => console.log(err));
+	};
+
+	const poll = (data) => {
+		clearInterval(pollingInterval);
+		pollingInterval = setInterval(() => pollHandler(data), 1000);
+	};
+
+	//get all group messages
 	useEffect(() => {
 		if (selectedGroup.hasOwnProperty("groupId")) {
 			axios
 				.get(`http://localhost:3001/chat/${userId}/group/${selectedGroup.groupId}`)
-				.then((res) => setMsgArr(res.data))
+				.then((res) => {
+					// poll(res.data);
+					setMsgArr(res.data);
+				})
 				.catch((err) => console.log(err));
 		}
 	}, [selectedGroup]);
@@ -65,11 +119,6 @@ const NewChatContainer = ({ user }) => {
 		axios.put(`http://localhost:3001/chat/${userId}/${id}`).then((res) => {
 			console.log(res);
 		});
-	};
-
-	const handleMessageSent = (e) => {
-		e.preventDefault();
-		const input = e.target["messageInput"].value;
 	};
 
 	return (
@@ -119,9 +168,9 @@ const NewChatContainer = ({ user }) => {
 					</div>
 					<div className="chatbox">
 						<div className="message-display">
-							{msgArr.map((msg) => (
+							{msgArr.map((msg, index) => (
 								<p
-									key={msg._id}
+									key={index}
 									className={`msg ${msg.sender === selectedGroup.message.userName ? "msg-self" : ""}`}
 								>{`${msg.sender}: ${msg.content}`}</p>
 							))}
@@ -136,9 +185,6 @@ const NewChatContainer = ({ user }) => {
 				</div>
 			</div>
 		</React.Fragment>
-		/* //navbar on top */
-
-		//blank space for top group entry / "such empty, much wow" message
 	);
 };
 

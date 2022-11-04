@@ -8,7 +8,10 @@ const messageSchema = new Schema({
 	sender: ObjectId,
 	msg: {
 		content: String,
-		time: Date,
+		time: {
+			type: Date,
+			default: Date.now(),
+		},
 	},
 });
 
